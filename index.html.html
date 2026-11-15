@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLB Máy tính cầm tay - Trường THPT Phù Yên</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        school: {
+                            blue: '#1e3a8a',      // Xanh dương đậm học đường
+                            light: '#eff6ff',     // Xanh dương nhạt nền
+                            accent: '#2563eb',    // Xanh dương tươi
+                            gold: '#f59e0b',      // Vàng điểm nhấn
+                            goldLight: '#fef3c7'  // Vàng nhạt nền
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Hiệu ứng chuyển tab mượt mà */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Toast Notification Container (Thông báo góc màn hình) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Custom Confirm Modal (Thay thế confirm() của trình duyệt) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 fade-in border border-slate-100">
+            <div class="flex items-center gap-3 text-red-600 mb-3">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900" id="confirm-title">Xác nhận thao tác</h3>
+            </div>
+            <p class="text-slate-600 text-sm mb-6 leading-relaxed" id="confirm-message">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <div class="flex justify-end gap-3">
+                <button id="confirm-cancel-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Hủy bỏ</button>
+                <button id="confirm-ok-btn" class="px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 shadow-sm transition">Xác nhận xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / Thanh điều hướng -->
+    <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-4">
+            <!-- Logo & Tên trường -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('student')">
+                <div class="w-11 h-11 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center shadow-md shrink-0">
+                    <i class="fa-solid fa-calculator text-2xl"></i>
+                </div>
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-amber-300">Trường THPT Phù Yên</div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight leading-tight">CLB MÁY TÍNH CẦM TAY</h1>
+                </div>
+            </div>
+
+            <!-- Nút chuyển đổi chế độ -->
+            <nav class="flex items-center gap-2 bg-blue-950/50 p-1.5 rounded-xl border border-blue-700/50">
+                <button id="nav-student-btn" onclick="switchView('student')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-white text-blue-900 shadow-sm">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Đăng ký & Tra cứu</span>
+                </button>
+                <button id="nav-admin-btn" onclick="switchView('admin')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-blue-100 hover:text-white hover:bg-blue-800/60">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span id="nav-admin-text">Quản trị viên</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6 sm:py-8">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: GIAO DIỆN HỌC SINH (ĐĂNG KÝ & TRA CỨU) -->
+        <!-- ========================================== -->
+        <div id="student-view" class="fade-in space-y-8">
+            
+            <!-- Banner Chào mừng -->
+            <div class="bg-gradient-to-br from-blue-50 via-white to-amber-50/70 rounded-2xl p-6 sm:p-8 border border-blue-100 shadow-sm relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 text-blue-900/5 pointer-events-none">
+                    <i class="fa-solid fa-square-root-variable text-9xl"></i>
+                </div>
+                <div class="max-w-3xl relative z-10">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 mb-3 border border-amber-200">
+                        <i class="fa-solid fa-star text-amber-500"></i> Tuyển thành viên năm học mới
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-blue-950 mb-2 leading-tight">
+                        CÂU LẠC BỘ MÁY TÍNH CẦM TAY <br class="hidden sm:inline"> TRƯỜNG THPT PHÙ YÊN
+                    </h2>
+                    <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
+                        Nơi giao lưu, chia sẻ kỹ năng giải toán nhanh trên máy tính cầm tay (Casio, Vinacal...), rèn luyện tư duy thuật toán và chuẩn bị cho các kỳ thi học sinh giỏi cấp Tỉnh, cấp Quốc gia.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Grid 2 cột: Form Đăng ký (Trái) & Tra cứu trạng thái (Phải) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+                
+                <!-- Cột trái: Phiếu đăng ký tham gia (7 cột) -->
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="bg-blue-900 px-6 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-file-signature text-amber-400 text-lg"></i>
+                            <h3 class="font-bold text-base sm:text-lg">Phiếu Đăng Ký Tham Gia</h3>
+                        </div>
+                        <span class="text-xs bg-blue-800 text-blue-200 px-2.5 py-1 rounded-md border border-blue-700">Bắt buộc nhập đủ</span>
+                    </div>
+
+                    <form id="registration-form" class="p-6 space-y-5">
+                        <!-- Họ và tên -->
+                        <div>
+                            <label for="fullName" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Họ và tên học sinh <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-user"></i>
+                                </span>
+                                <input type="text" id="fullName" required placeholder="Ví dụ: Nguyễn Văn An"
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Lớp -->
+                        <div>
+                            <label for="studentClass" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Lớp <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-graduation-cap"></i>
+                                </span>
+                                <input type="text" id="studentClass" required placeholder="Ví dụ: 10A1, 11B2, 12C3..."
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm uppercase">
+                            </div>
+                        </div>
+
+                        <!-- Loại máy tính cầm tay -->
+                        <div>
+                            <label for="calculatorType" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Loại máy tính cầm tay đang sử dụng <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-calculator"></i>
+                                </span>
+                                <select id="calculatorType" required onchange="toggleOtherCalculator()"
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm bg-white">
+                                    <option value="" disabled selected>-- Chọn dòng máy tính của bạn --</option>
+                                    <option value="Casio fx-580VN X">Casio fx-580VN X</option>
+                                    <option value="Casio fx-880BTG">Casio fx-880BTG</option>
+                                    <option value="Casio fx-570VN PLUS">Casio fx-570VN PLUS</option>
+                                    <option value="Vinacal 680EX Plus">Vinacal 680EX Plus</option>
+                                    <option value="Vinacal 570ES Plus II">Vinacal 570ES Plus II</option>
+                                    <option value="Khác">Khác (Nhập tên máy cụ thể...)</option>
+                                </select>
+                            </div>
+                            <!-- Ô nhập tên máy khác (ẩn mặc định) -->
+                            <div id="otherCalculatorWrapper" class="mt-3 hidden fade-in">
+                                <input type="text" id="otherCalculatorInput" placeholder="Nhập tên dòng máy tính bạn đang dùng..."
+                                    class="w-full px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Lý do muốn tham gia -->
+                        <div>
+                            <label for="reason" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Lý do muốn tham gia câu lạc bộ <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="reason" rows="4" required placeholder="Chia sẻ niềm yêu thích toán học, kỹ năng bấm máy hoặc mục tiêu của bạn khi tham gia CLB..."
+                                class="w-full p-3.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm resize-y"></textarea>
+                        </div>
+
+                        <!-- Thông báo gửi thành công (hiện sau khi submit) -->
+                        <div id="submit-success-banner" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm fade-in">
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5"></i>
+                                <div>
+                                    <p class="font-bold">Gửi phiếu đăng ký thành công! <span id="submitted-ticket-code" class="ml-1 inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono text-xs border border-emerald-300"></span></p>
+                                    <p class="text-emerald-700 mt-1">Đơn của bạn đã được chuyển tới Ban Chủ Nhiệm CLB. Bạn có thể kiểm tra kết quả duyệt ở khung <strong>Tra cứu trạng thái</strong> bên cạnh.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nút Gửi -->
+                        <button type="submit" id="submit-btn"
+                            class="w-full py-3 px-6 rounded-xl bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white font-bold text-sm sm:text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Gửi đơn đăng ký</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Cột phải: Tra cứu trạng thái đơn đăng ký (5 cột) -->
+                <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <div class="bg-amber-500 px-6 py-4 text-blue-950 flex items-center gap-2.5">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                        <h3 class="font-bold text-base sm:text-lg">Tra Cứu Trạng Thái Đơn</h3>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <p class="text-xs sm:text-sm text-slate-600">
+                            Nhập <strong>Họ tên</strong> hoặc <strong>Lớp</strong> của bạn để xem đơn đăng ký đã được Ban Chủ Nhiệm duyệt hay chưa.
+                        </p>
+
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                            <input type="text" id="student-search-input" oninput="renderStudentLookup()"
+                                placeholder="Nhập tên hoặc lớp để tìm kiếm..."
+                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition text-sm">
+                        </div>
+
+                        <!-- Kết quả tra cứu -->
+                        <div id="student-lookup-results" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                            <div class="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                <i class="fa-regular fa-folder-open text-2xl mb-2 block text-slate-300"></i>
+                                Nhập thông tin vào ô phía trên để tra cứu đơn của bạn
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: CỔNG QUẢN TRỊ VIÊN (LOGIN & DASHBOARD) -->
+        <!-- ========================================== -->
+        <div id="admin-view" class="hidden fade-in">
+            
+            <!-- 2A. Form Đăng nhập Quản trị viên -->
+            <div id="admin-login-box" class="max-w-md mx-auto my-8 bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+                <div class="bg-blue-950 p-6 text-center text-white">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-400 text-blue-950 flex items-center justify-center mx-auto mb-3 shadow-md">
+                        <i class="fa-solid fa-shield-halved text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold">Cổng Quản Trị Viên</h2>
+                    <p class="text-xs text-blue-200 mt-1">CLB Máy tính cầm tay - THPT Phù Yên</p>
+                </div>
+
+                <form id="admin-login-form" class="p-6 space-y-4">
+                    <div>
+                        <label for="adminUsername" class="block text-sm font-semibold text-slate-700 mb-1.5">Tên tài khoản</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </span>
+                            <input type="text" id="adminUsername" required placeholder="Nhập tên tài khoản..."
+                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="adminPassword" class="block text-sm font-semibold text-slate-700 mb-1.5">Mật khẩu</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="password" id="adminPassword" required placeholder="Nhập mật khẩu..."
+                                class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none transition text-sm">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+                                <i id="password-eye-icon" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="login-error-msg" class="hidden text-xs font-medium text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="login-error-text">Tên tài khoản hoặc mật khẩu không chính xác!</span>
+                    </div>
+
+                    <div class="pt-1">
+                        <button type="button" id="admin-login-submit-btn" class="w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-800 active:bg-blue-950 text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Đăng nhập hệ thống</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 2B. Bảng điều khiển Quản trị viên (Admin Dashboard) -->
+            <div id="admin-dashboard" class="hidden space-y-6">
+                
+                <!-- Thanh tiêu đề Dashboard & Nút Đăng xuất -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Bảng Điều Khiển Duyệt Đơn</h2>
+                            <p class="text-xs text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
+                                <span>Xin chào quản trị viên <span class="font-bold text-blue-700">hue</span></span>
+                                <span>•</span>
+                                <span id="storage-mode-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-blue-500"></i> Đang khởi tạo...
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                    <button type="button" onclick="openChangePasswordModal()" class="px-3.5 py-2 rounded-xl bg-blue-800 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Đổi mật khẩu</span>
+                    </button>
+                    <button type="button" onclick="exportApprovedCSV()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Xuất CSV</span>
+                    </button>
+                    <button type="button" onclick="logoutAdmin()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm border border-red-200 transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Đăng xuất</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thẻ thống kê số lượng đơn -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-folder-open text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-slate-500">Tổng số đơn</div>
+                            <div id="stat-total" class="text-xl sm:text-2xl font-extrabold text-slate-900">0</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-sm flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-hourglass-half text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-slate-500">Chờ duyệt</div>
+                            <div id="stat-pending" class="text-xl sm:text-2xl font-extrabold text-amber-600">0</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-emerald-200/80 shadow-sm flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-circle-check text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-slate-500">Đã duyệt</div>
+                            <div id="stat-approved" class="text-xl sm:text-2xl font-extrabold text-emerald-600">0</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-red-200/80 shadow-sm flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-circle-xmark text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-slate-500">Từ chối</div>
+                            <div id="stat-rejected" class="text-xl sm:text-2xl font-extrabold text-red-600">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bộ lọc trạng thái & Tìm kiếm -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Các nút lọc trạng thái -->
+                    <div class="flex flex-wrap items-center gap-2" id="filter-buttons">
+                        <button onclick="setAdminFilter('all')" data-filter="all" class="filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-900 text-white transition">
+                            Tất cả
+                        </button>
+                        <button onclick="setAdminFilter('Chờ duyệt')" data-filter="Chờ duyệt" class="filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                            Chờ duyệt
+                        </button>
+                        <button onclick="setAdminFilter('Đã duyệt')" data-filter="Đã duyệt" class="filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                            Đã duyệt
+                        </button>
+                        <button onclick="setAdminFilter('Từ chối')" data-filter="Từ chối" class="filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                            Từ chối
+                        </button>
+                    </div>
+
+                    <!-- Ô tìm kiếm -->
+                    <div class="relative w-full md:w-72">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                            <i class="fa-solid fa-search"></i>
+                        </span>
+                        <input type="text" id="admin-search-input" oninput="renderAdminList()"
+                            placeholder="Tìm theo tên học sinh hoặc lớp..."
+                            class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none text-sm">
+                    </div>
+                </div>
+
+                <!-- Danh sách phiếu đăng ký -->
+                <div id="admin-applications-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Nội dung render bằng JS -->
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Đổi mật khẩu Quản trị viên -->
+    <div id="change-password-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 fade-in border border-slate-100">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2 text-blue-900">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <i class="fa-solid fa-key text-blue-700"></i>
+                    </div>
+                    <h3 class="font-bold text-base">Đổi Mật Khẩu Quản Trị Viên</h3>
+                </div>
+                <button type="button" onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="change-password-form" onsubmit="handleChangePassword(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mật khẩu hiện tại</label>
+                    <input type="password" id="current-password" required placeholder="Nhập mật khẩu hiện tại..."
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mật khẩu mới</label>
+                    <input type="password" id="new-password" required placeholder="Nhập mật khẩu mới..."
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="confirm-new-password" required placeholder="Nhập lại mật khẩu mới..."
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 outline-none text-sm">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 shadow-sm transition">Lưu mật khẩu mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm">
+            <div class="flex items-center gap-2 text-slate-200 font-semibold">
+                <i class="fa-solid fa-calculator text-amber-400"></i>
+                <span>CLB Máy tính cầm tay - Trường THPT Phù Yên</span>
+            </div>
+            <p>© 2025 Hệ thống đăng ký & xét duyệt thành viên trực tuyến.</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. GẮN CÁC HÀM TOÀN CỤC TRƯỚC TIÊN ĐỂ TRÁNH LỖI REFERENCEERROR
+        // ==========================================
+        let storageMode = 'memory';
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let applicationsData = [];
+        let currentAdminFilter = 'all';
+        let isAdminLoggedIn = false;
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'thpt-phuyen-calc-club';
+        const ADMIN_SESSION_KEY = 'thpt_phuyen_calc_admin_logged_in';
+        const ADMIN_CUSTOM_PASS_KEY = 'thpt_phuyen_calc_admin_custom_pass';
+        const SHARED_REG_STORAGE_KEY = 'thpt_phuyen_calc_shared_registrations_v2';
+
+        let currentAdminPassword = 'thanthihue489021@';
+        try {
+            const savedCustomPass = localStorage.getItem(ADMIN_CUSTOM_PASS_KEY);
+            if (savedCustomPass) {
+                currentAdminPassword = savedCustomPass;
+            }
+        } catch(e) {}
+
+        const ADMIN_CREDENTIALS = {
+            username: 'hue',
+            password: currentAdminPassword
+        };
+
+        const DEFAULT_SAMPLE_DATA = [
+            {
+                id: 'PY-1001',
+                fullName: 'Nguyễn Minh Khang',
+                studentClass: '11A1',
+                calculatorModel: 'Casio fx-580VN X',
+                reason: 'Em rất yêu thích môn Toán và muốn học thêm các thủ thuật giải nhanh phương trình bằng máy tính cầm tay.',
+                status: 'Chờ duyệt',
+                createdAt: '08:30 14/11/2026',
+                createdAtMs: Date.now() - 3600000
+            }
+        ];
+
+        window.__MEMORY_STORE__ = window.__MEMORY_STORE__ || {};
+        const safeStorage = {
+            getItem(key, isSession = false) {
+                try {
+                    const store = isSession ? window.sessionStorage : window.localStorage;
+                    const val = store.getItem(key);
+                    if (val !== null) return val;
+                } catch (e) {}
+                return Object.prototype.hasOwnProperty.call(window.__MEMORY_STORE__, key)
+                    ? window.__MEMORY_STORE__[key]
+                    : null;
+            },
+            setItem(key, value, isSession = false) {
+                window.__MEMORY_STORE__[key] = String(value);
+                try {
+                    const store = isSession ? window.sessionStorage : window.localStorage;
+                    store.setItem(key, String(value));
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            },
+            removeItem(key, isSession = false) {
+                delete window.__MEMORY_STORE__[key];
+                try {
+                    const store = isSession ? window.sessionStorage : window.localStorage;
+                    store.removeItem(key);
+                } catch (e) {}
+            }
+        };
+
+        isAdminLoggedIn = safeStorage.getItem(ADMIN_SESSION_KEY, true) === 'true';
+
+        function loadSharedRegistrations() {
+            try {
+                const raw = localStorage.getItem(SHARED_REG_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        applicationsData = parsed;
+                        return;
+                    }
+                }
+            } catch(e) {}
+            applicationsData = [...DEFAULT_SAMPLE_DATA];
+            saveSharedRegistrations();
+        }
+
+        function saveSharedRegistrations() {
+            try {
+                localStorage.setItem(SHARED_REG_STORAGE_KEY, JSON.stringify(applicationsData));
+            } catch(e) {}
+        }
+
+        window.switchView = function(viewName) {
+            const studentView = document.getElementById('student-view');
+            const adminView = document.getElementById('admin-view');
+            const navStudentBtn = document.getElementById('nav-student-btn');
+            const navAdminBtn = document.getElementById('nav-admin-btn');
+
+            if (viewName === 'student') {
+                studentView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                navStudentBtn.className = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-white text-blue-900 shadow-sm";
+                navAdminBtn.className = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-blue-100 hover:text-white hover:bg-blue-800/60";
+            } else {
+                studentView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                navAdminBtn.className = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-amber-400 text-blue-950 shadow-sm";
+                navStudentBtn.className = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-blue-100 hover:text-white hover:bg-blue-800/60";
+                updateAdminUIState();
+            }
+        };
+
+        window.toggleOtherCalculator = function() {
+            const select = document.getElementById('calculatorType');
+            const wrapper = document.getElementById('otherCalculatorWrapper');
+            const input = document.getElementById('otherCalculatorInput');
+
+            if (select.value === 'Khác') {
+                wrapper.classList.remove('hidden');
+                input.setAttribute('required', 'true');
+                input.focus();
+            } else {
+                wrapper.classList.add('hidden');
+                input.removeAttribute('required');
+                input.value = '';
+            }
+        };
+
+        window.renderStudentLookup = function() {
+            const keyword = document.getElementById('student-search-input').value.trim().toLowerCase();
+            const container = document.getElementById('student-lookup-results');
+
+            if (!keyword) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <i class="fa-regular fa-folder-open text-2xl mb-2 block text-slate-300"></i>
+                        Nhập họ tên hoặc lớp của bạn vào ô phía trên để kiểm tra trạng thái duyệt
+                    </div>
+                `;
+                return;
+            }
+
+            const matched = applicationsData.filter(item => 
+                (item.fullName && item.fullName.toLowerCase().includes(keyword)) ||
+                (item.studentClass && item.studentClass.toLowerCase().includes(keyword)) ||
+                (item.ticketCode && item.ticketCode.toLowerCase().includes(keyword))
+            );
+
+            if (matched.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-sm bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-magnifying-glass text-xl mb-2 block text-slate-400"></i>
+                        Không tìm thấy phiếu đăng ký nào khớp với "<strong>${escapeHtml(keyword)}</strong>"
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = matched.map(item => {
+                const badge = getStatusBadge(item.status);
+                return `
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition shadow-sm">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(item.fullName)}</h4>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                        Lớp ${escapeHtml(item.studentClass)}
+                                    </span>
+                                    ${item.ticketCode ? `<span class="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${escapeHtml(item.ticketCode)}</span>` : ''}
+                                </div>
+                            </div>
+                            ${badge}
+                        </div>
+                        <div class="text-xs text-slate-600 space-y-1 mt-2 pt-2 border-t border-slate-200/70">
+                            <div><i class="fa-solid fa-calculator text-slate-400 w-4"></i> Máy tính: <strong class="text-slate-800">${escapeHtml(item.calculatorModel)}</strong></div>
+                            <div><i class="fa-regular fa-clock text-slate-400 w-4"></i> Ngày gửi: ${escapeHtml(item.createdAt || 'Vừa xong')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.togglePasswordVisibility = function() {
+            const pwdInput = document.getElementById('adminPassword');
+            const icon = document.getElementById('password-eye-icon');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                pwdInput.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        };
+
+        window.openChangePasswordModal = function() {
+            if (!isAdminLoggedIn) {
+                showToast("Bạn cần đăng nhập vào quản trị viên để đổi mật khẩu!", "error");
+                return;
+            }
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('change-password-form').reset();
+        };
+
+        window.closeChangePasswordModal = function() {
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.handleChangePassword = function(e) {
+            e.preventDefault();
+            const curPass = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-new-password').value;
+
+            if (curPass !== currentAdminPassword) {
+                showToast("Mật khẩu hiện tại không chính xác!", "error");
+                return;
+            }
+            if (newPass.length < 6) {
+                showToast("Mật khẩu mới phải có ít nhất 6 ký tự!", "error");
+                return;
+            }
+            if (newPass !== confirmPass) {
+                showToast("Xác nhận mật khẩu mới không khớp!", "error");
+                return;
+            }
+
+            currentAdminPassword = newPass;
+            ADMIN_CREDENTIALS.password = newPass;
+            try {
+                localStorage.setItem(ADMIN_CUSTOM_PASS_KEY, newPass);
+            } catch(err) {}
+
+            closeChangePasswordModal();
+            showToast("Đổi mật khẩu quản trị thành công!", "success");
+        };
+
+        function processAdminLogin() {
+            const userInp = document.getElementById('adminUsername');
+            const passInp = document.getElementById('adminPassword');
+            const errorMsg = document.getElementById('login-error-msg');
+            const errorText = document.getElementById('login-error-text');
+
+            if (!userInp || !passInp) return;
+
+            const user = userInp.value.trim().toLowerCase();
+            const pass = passInp.value.trim();
+
+            if (user === ADMIN_CREDENTIALS.username.toLowerCase() && pass === currentAdminPassword) {
+                isAdminLoggedIn = true;
+                safeStorage.setItem(ADMIN_SESSION_KEY, 'true', true);
+                errorMsg.classList.add('hidden');
+                document.getElementById('admin-login-form').reset();
+                updateAdminUIState();
+                showToast("Đăng nhập quyền Quản trị viên thành công!", "success");
+            } else {
+                errorText.textContent = `Sai tài khoản hoặc mật khẩu! (TK: ${ADMIN_CREDENTIALS.username})`;
+                errorMsg.classList.remove('hidden');
+                showToast("Sai tên tài khoản hoặc mật khẩu!", "error");
+            }
+        }
+
+        window.handleAdminLogin = function(e) {
+            if (e) e.preventDefault();
+            processAdminLogin();
+        };
+
+        window.logoutAdmin = function() {
+            isAdminLoggedIn = false;
+            safeStorage.removeItem(ADMIN_SESSION_KEY, true);
+            updateAdminUIState();
+            showToast("Đã đăng xuất khỏi tài khoản quản trị!", "info");
+        };
+
+        window.setAdminFilter = function(filter) {
+            currentAdminFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-filter') === filter) {
+                    btn.className = "filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-900 text-white transition shadow-sm";
+                } else {
+                    btn.className = "filter-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+                }
+            });
+            window.renderAdminList();
+        };
+
+        window.renderAdminList = function() {
+            const container = document.getElementById('admin-applications-list');
+            if (!container) return;
+
+            const keyword = (document.getElementById('admin-search-input')?.value || '').trim().toLowerCase();
+            
+            let filtered = applicationsData.filter(item => {
+                const matchFilter = currentAdminFilter === 'all' || item.status === currentAdminFilter;
+                const matchKeyword = !keyword || 
+                    (item.fullName && item.fullName.toLowerCase().includes(keyword)) ||
+                    (item.studentClass && item.studentClass.toLowerCase().includes(keyword)) ||
+                    (item.ticketCode && item.ticketCode.toLowerCase().includes(keyword));
+                return matchFilter && matchKeyword;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-500">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 block text-slate-300"></i>
+                        Không có phiếu đăng ký nào phù hợp với bộ lọc.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const badge = getStatusBadge(item.status);
+                return `
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between gap-4">
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-base">${escapeHtml(item.fullName)}</h4>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                                        <span class="text-xs font-semibold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
+                                            Lớp ${escapeHtml(item.studentClass)}
+                                        </span>
+                                        ${item.ticketCode ? `<span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded-md">${escapeHtml(item.ticketCode)}</span>` : ''}
+                                    </div>
+                                </div>
+                                ${badge}
+                            </div>
+                            
+                            <div class="space-y-1.5 text-xs text-slate-600 my-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <div><span class="font-semibold text-slate-700">Máy tính:</span> ${escapeHtml(item.calculatorModel)}</div>
+                                <div><span class="font-semibold text-slate-700">Lý do:</span> "${escapeHtml(item.reason)}"</div>
+                                <div class="text-slate-400 pt-1 border-t border-slate-200/60"><i class="fa-regular fa-clock mr-1"></i> Gửi lúc: ${escapeHtml(item.createdAt || 'N/A')}</div>
+                            </div>
+                        </div>
+
+                        <!-- Các nút thao tác duyệt đơn -->
+                        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" onclick="updateStatus('${item.id}', 'Đã duyệt')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-check"></i> Duyệt
+                            </button>
+                            <button type="button" onclick="updateStatus('${item.id}', 'Từ chối')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-ban"></i> Từ chối
+                            </button>
+                            <button type="button" onclick="deleteApplication('${item.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-trash"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.updateStatus = async function(id, newStatus) {
+            const item = applicationsData.find(d => d.id === id);
+            if (item) {
+                item.status = newStatus;
+                saveSharedRegistrations();
+                updateAdminStats();
+                window.renderAdminList();
+                window.renderStudentLookup();
+                showToast(`Đã chuyển trạng thái đơn thành "${newStatus}"`, "success");
+            }
+        };
+
+        window.deleteApplication = async function(id) {
+            confirmDeleteModal("Bạn có chắc chắn muốn xóa phiếu đăng ký này?", () => {
+                applicationsData = applicationsData.filter(d => d.id !== id);
+                saveSharedRegistrations();
+                updateAdminStats();
+                window.renderAdminList();
+                window.renderStudentLookup();
+                showToast("Đã xóa phiếu đăng ký thành công khỏi hệ thống!", "success");
+            });
+        };
+
+        window.exportApprovedCSV = function() {
+            const approvedList = applicationsData.filter(d => d.status === 'Đã duyệt');
+            if (approvedList.length === 0) {
+                showToast("Không có thành viên nào đã được duyệt để xuất file!", "warning");
+                return;
+            }
+
+            let csvContent = "\uFEFFSTT,Họ và tên,Lớp,Máy tính cầm tay,Lý do tham gia,Ngày duyệt\n";
+            approvedList.forEach((item, index) => {
+                csvContent += `"${index + 1}","${item.fullName}","${item.studentClass}","${item.calculatorModel}","${item.reason.replace(/"/g, '""')}","${item.createdAt || ''}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Danh_sach_Thanh_vien_CLB_PhuYen_${Date.now()}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("Xuất danh sách thành viên CSV thành công!", "success");
+        };
+
+        function confirmDeleteModal(message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-message');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+            msgEl.textContent = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                onConfirm();
+            });
+
+            newCancelBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+        }
+
+        function updateStorageBadge(mode) {
+            storageMode = mode;
+            const badge = document.getElementById('storage-mode-badge');
+            if (!badge) return;
+            if (mode === 'firebase') {
+                badge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                badge.innerHTML = `<i class="fa-solid fa-cloud text-emerald-500"></i> Đồng bộ trực tuyến`;
+            } else {
+                badge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200";
+                badge.innerHTML = `<i class="fa-solid fa-memory text-blue-500"></i> Chế độ hoạt động trực tiếp`;
+            }
+        }
+
+        function initFallbackMode() {
+            loadSharedRegistrations();
+            updateAdminStats();
+            if (isAdminLoggedIn) window.renderAdminList();
+            window.renderStudentLookup();
+        }
+
+        async function initFirebase() {
+            initFallbackMode();
+
+            if (typeof firebaseConfig === 'undefined' || !firebaseConfig.apiKey) {
+                return;
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        updateStorageBadge('firebase');
+                        listenToApplications();
+                    }
+                });
+            } catch (error) {}
+        }
+
+        function listenToApplications() {
+            if (!currentUser || !db) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'club_registrations');
+
+            onSnapshot(colRef, (snapshot) => {
+                const list = [];
+                snapshot.forEach((docSnap) => {
+                    list.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                if (list.length > 0) {
+                    list.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+                    applicationsData = list;
+                }
+                updateAdminStats();
+                if (isAdminLoggedIn) window.renderAdminList();
+                window.renderStudentLookup();
+            }, (error) => {
+                updateStorageBadge('memory');
+            });
+        }
+
+        document.getElementById('registration-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const studentClass = document.getElementById('studentClass').value.trim().toUpperCase();
+            const calcSelect = document.getElementById('calculatorType').value;
+            const otherCalc = document.getElementById('otherCalculatorInput').value.trim();
+            const reason = document.getElementById('reason').value.trim();
+
+            if (!fullName || !studentClass || !calcSelect || !reason) {
+                showToast("Vui lòng điền đầy đủ các thông tin bắt buộc!", "error");
+                return;
+            }
+            if (calcSelect === 'Khác' && !otherCalc) {
+                showToast("Vui lòng nhập tên dòng máy tính cụ thể!", "error");
+                return;
+            }
+
+            const calculatorModel = calcSelect === 'Khác' ? otherCalc : calcSelect;
+            const submitBtn = document.getElementById('submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang gửi phiếu...</span>`;
+
+            try {
+                const now = new Date();
+                const formattedDate = now.toLocaleString('vi-VN', {
+                    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
+                });
+                const ticketCode = 'PY-' + String(Math.floor(1000 + Math.random() * 9000));
+
+                const newEntry = {
+                    id: ticketCode + '-' + Date.now(),
+                    ticketCode, fullName, studentClass, calculatorModel, reason,
+                    status: 'Chờ duyệt',
+                    createdAt: formattedDate,
+                    createdAtMs: Date.now()
+                };
+
+                if (storageMode === 'firebase' && currentUser && db) {
+                    try {
+                        const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'club_registrations');
+                        await addDoc(colRef, newEntry);
+                    } catch (cloudErr) {}
+                }
+
+                applicationsData.unshift(newEntry);
+                saveSharedRegistrations();
+
+                updateAdminStats();
+                if (isAdminLoggedIn) window.renderAdminList();
+
+                document.getElementById('registration-form').reset();
+                document.getElementById('otherCalculatorWrapper').classList.add('hidden');
+                document.getElementById('submitted-ticket-code').textContent = `Mã phiếu: ${ticketCode}`;
+                document.getElementById('submit-success-banner').classList.remove('hidden');
+
+                document.getElementById('student-search-input').value = fullName;
+                window.renderStudentLookup();
+
+                showToast(`Gửi đơn đăng ký thành công! Mã phiếu: ${ticketCode}`, "success");
+            } catch (err) {
+                showToast("Gửi phiếu đăng ký thành công.", "success");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        });
+
+        document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            processAdminLogin();
+        });
+
+        const adminLoginSubmitBtn = document.getElementById('admin-login-submit-btn');
+        if (adminLoginSubmitBtn) {
+            adminLoginSubmitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                processAdminLogin();
+            });
+        }
+
+        function updateAdminUIState() {
+            const loginBox = document.getElementById('admin-login-box');
+            const dashboard = document.getElementById('admin-dashboard');
+            const navAdminText = document.getElementById('nav-admin-text');
+
+            if (isAdminLoggedIn) {
+                loginBox.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                navAdminText.textContent = 'Quản trị (Đã đăng nhập)';
+                updateAdminStats();
+                window.renderAdminList();
+            } else {
+                loginBox.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                navAdminText.textContent = 'Quản trị viên';
+            }
+        }
+
+        function updateAdminStats() {
+            const total = applicationsData.length;
+            const pending = applicationsData.filter(d => d.status === 'Chờ duyệt').length;
+            const approved = applicationsData.filter(d => d.status === 'Đã duyệt').length;
+            const rejected = applicationsData.filter(d => d.status === 'Từ chối').length;
+
+            const elTotal = document.getElementById('stat-total');
+            const elPending = document.getElementById('stat-pending');
+            const elApproved = document.getElementById('stat-approved');
+            const elRejected = document.getElementById('stat-rejected');
+
+            if (elTotal) elTotal.textContent = total;
+            if (elPending) elPending.textContent = pending;
+            if (elApproved) elApproved.textContent = approved;
+            if (elRejected) elRejected.textContent = rejected;
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'Đã duyệt') {
+                return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0"><i class="fa-solid fa-circle-check text-emerald-600"></i> Đã duyệt</span>`;
+            }
+            if (status === 'Từ chối') {
+                return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 shrink-0"><i class="fa-solid fa-circle-xmark text-red-600"></i> Từ chối</span>`;
+            }
+            return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 shrink-0"><i class="fa-solid fa-hourglass-half text-amber-600"></i> Chờ duyệt</span>`;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const styles = {
+                success: 'bg-emerald-600 text-white border-emerald-700',
+                error: 'bg-red-600 text-white border-red-700',
+                warning: 'bg-amber-500 text-blue-950 border-amber-600',
+                info: 'bg-slate-800 text-white border-slate-900'
+            };
+            const icons = {
+                success: 'fa-circle-check', error: 'fa-circle-exclamation', warning: 'fa-triangle-exclamation', info: 'fa-circle-info'
+            };
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium fade-in ${styles[type] || styles.info}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base shrink-0"></i><span class="leading-snug">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
